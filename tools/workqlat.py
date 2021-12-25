@@ -6,27 +6,41 @@
 
 from __future__ import print_function
 from bcc import BPF
+from time import sleep
 
 src="""
 #include <uapi/linux/ptrace.h>
 
 BPF_HISTOGRAM(dist);
-BPF_HASH(record);
+BPF_HASH(record, void*);
 
 TRACEPOINT_PROBE(workqueue, workqueue_queue_work) {
+    void *work = NULL;
     u64 ts = bpf_ktime_get_ns();
-    u64 work = args->work;
+    if (args != NULL)
+        work = args->work;
     record.update(&work, &ts);
+
+    return 0;
 }
 
 TRACEPOINT_PROBE(workqueue, workqueue_execute_start) {
-    u64 work = args->work;
-    u64 *ts = record.lookup(&work);
+    void *work = NULL;
+    u64 *ts = NULL;
     u64 delta = 0;
-    delta = bpf_ktime_get_ns() - *ts;
-    dist.increment(delta);
+    if (args != NULL) {
+        work = args->work;
+        ts = record.lookup(&work);
+    }
+    if (ts != NULL) {
+        delta = bpf_ktime_get_ns() - *ts;
+        bpf_trace_printk("delta = %ul \\n", delta);
+        dist.increment(delta);
     
-    record.delete(&work);
+        record.delete(&work);
+    }    
+    
+    return 0;
 }
 """
 
@@ -38,7 +52,8 @@ while 1:
     except KeyboardInterrupt:
         exiting = 1
 
-    dist.print_hist("Miliseconds")
+    print("Printing histogram")
+    dist.print_linear_hist("Miliseconds")
     dist.clear()
 
     
