@@ -10,6 +10,7 @@ from bcc import BPF
 src="""
 #include <uapi/linux/ptrace.h>
 
+BPF_HASH(record);
 BPF_HISTOGRAM(shrink_slab_hist);
 BPF_HISTOGRAM(direct_reclaim_hist);
 BPF_HISTOGRAM(kswapd_hist);
@@ -25,62 +26,68 @@ u64 memcg_softlimit_reclaim_time = 0;
 u64 node_reclaim_time = 0;
 
 TRACEPOINT_PROBE(vmscan, mm_shrink_slab_start) {
-    shrink_slab_time =  bpf_ktime_get_ns();
+    record.update(100, bpf_ktime_get_ns());
     return 0;
 }
 TRACEPOINT_PROBE(vmscan, mm_shrink_slab_end) {
     u64 dur = 0;
-    dur =  bpf_ktime_get_ns() - shrink_slab_time;
+    dur = record.lookup(100)
+    dur =  bpf_ktime_get_ns() - dur;
     shrink_slab_hist.increment(dur/1000);
     return 0;
 }
 TRACEPOINT_PROBE(vmscan, mm_vmscan_direct_reclaim_begin) {
-    direct_reclaim_time = bpf_ktime_get_ns();
+    record.update(200, bpf_ktime_get_ns());
     return 0;
 }
 TRACEPOINT_PROBE(vmscan, mm_vmscan_direct_reclaim_end) {
     u64 dur = 0;
-    dur = bpf_ktime_get_ns() - direct_reclaim_time;
+    dur = record.lookup(200)
+    dur =  bpf_ktime_get_ns() - dur;
     direct_reclaim_hist.increment(dur/1000);
     return 0;
 }
 TRACEPOINT_PROBE(vmscan, mm_vmscan_kswapd_sleep) {
     u64 dur = 0;
-    dur =  bpf_ktime_get_ns() - kswapd_time;
+    dur = record.lookup(300)
+    dur =  bpf_ktime_get_ns() - dur;
     kswapd_hist.increment(dur/1000);
     return 0;
 }
 TRACEPOINT_PROBE(vmscan, mm_vmscan_kswapd_wake) {
-    kswapd_time = bpf_ktime_get_ns();
+    record.update(300, bpf_ktime_get_ns());
     return 0;
 }
 TRACEPOINT_PROBE(vmscan, mm_vmscan_memcg_reclaim_begin) {
-    memcg_reclaim_time = bpf_ktime_get_ns();
+    record.update(400, bpf_ktime_get_ns());
     return 0;
 }
 TRACEPOINT_PROBE(vmscan, mm_vmscan_memcg_reclaim_end) {
     u64 dur = 0;
-    dur = bpf_ktime_get_ns() - memcg_reclaim_time;
+    dur = record.lookup(400)
+    dur =  bpf_ktime_get_ns() - dur;
     memcg_reclaim_hist.increment(dur/1000);
     return 0;
 }
 TRACEPOINT_PROBE(vmscan, mm_vmscan_memcg_softlimit_reclaim_begin) {
-    memcg_softlimit_reclaim_time = bpf_ktime_get_ns();
+    record.update(500, bpf_ktime_get_ns());
     return 0;
 }
 TRACEPOINT_PROBE(vmscan, mm_vmscan_memcg_softlimit_reclaim_end) {
     u64 dur = 0;
-    dur = bpf_ktime_get_ns() - memcg_softlimit_reclaim_time;
+    dur = record.lookup(500)
+    dur =  bpf_ktime_get_ns() - dur;
     memcg_softlimit_reclaim_hist.increment(dur/1000);
     return 0;
 }
 TRACEPOINT_PROBE(vmscan, mm_vmscan_node_reclaim_begin) {
-    node_reclaim_time = bpf_ktime_get_ns();
+    record.update(600, bpf_ktime_get_ns());
     return 0;
 }
 TRACEPOINT_PROBE(vmscan, mm_vmscan_node_reclaim_end) {
     u64 dur = 0;
-    dur = bpf_ktime_get_ns() - node_reclaim_time;
+    dur = record.lookup(600)
+    dur =  bpf_ktime_get_ns() - dur;
     node_reclaim_hist.increment(dur/1000);
     return 0;
 }
