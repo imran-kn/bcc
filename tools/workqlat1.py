@@ -57,7 +57,7 @@ while 1:
     print("Printing map", len(counts))
     for k, v in sorted(counts.items(), key=lambda counts: counts[1].value):
        func = b.ksym(k)
-       print(func, v)
+       print(func.decode("utf-8"), v.value)
     #for k,v in rec.items():
         #print("work handler: ",k, "count: ", v) 
 
