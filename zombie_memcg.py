@@ -6,10 +6,10 @@
 #
 # USAGE: zombie_memcg [-h] [interval] [count]
 #
-# Copyright 2025 Oracle and/or its affiliates.
+# Copyright (c) Imran Khan.
 # Licensed under the Apache License, Version 2.0 (the "License")
 #
-# 01-Jan-2025   Imran Khan     Created this.
+# 28-Dec-2024   Imran Khan     Created this.
 
 
 from __future__ import print_function
